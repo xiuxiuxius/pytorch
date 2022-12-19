@@ -1573,11 +1573,13 @@ def merge(pr_num: int, repo: GitRepo,
             raise RuntimeError("New commits were pushed while merging. Please rerun the merge command.")
         try:
             required_checks = []
+            failed_rule_message = None
             try:
                 find_matching_merge_rule(pr, repo)
             except MandatoryChecksMissingError as ex:
                 if ex.rule is not None and ex.rule.mandatory_checks_name is not None:
                     required_checks = ex.rule.mandatory_checks_name
+                failed_rule_message = ex
 
             checks = get_combined_checks_from_pr_and_land_validation(pr, land_check_commit)
             pending, failing = categorize_checks(checks, required_checks + [x for x in checks.keys() if x not in required_checks])
@@ -1592,8 +1594,11 @@ def merge(pr_num: int, repo: GitRepo,
                 raise RuntimeError(f"{len(failing)} jobs have failed, first few of them are: " +
                                    ' ,'.join(f"[{x[0]}]({x[1]})" for x in failing[:5]))
             if len(pending) > 0:
-                raise MandatoryChecksMissingError(f"Still waiting for {len(pending)} jobs to finish, " +
-                                                  f"first few of them are: {', '.join(x[0] for x in pending[:5])}")
+                if failed_rule_message is not None:
+                    raise failed_rule_message
+                else:
+                    raise MandatoryChecksMissingError(f"Still waiting for {len(pending)} jobs to finish, " +
+                                                      f"first few of them are: {', '.join(x[0] for x in pending[:5])}")
             if land_checks and land_check_commit is not None:
                 validate_land_time_checks(org, project, land_check_commit)
 
