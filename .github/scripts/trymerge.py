@@ -1586,7 +1586,7 @@ def merge(pr_num: int, repo: GitRepo,
             # HACK until GitHub will be better about surfacing those
             startup_failures = filter_checks_with_lambda(checks, lambda status: status == "STARTUP_FAILURE")
             if len(startup_failures) > 0:
-                raise RuntimeError(f"{len(failing)} STARTUP failures reported, please check workflows syntax! " +
+                raise RuntimeError(f"{len(startup_failures)} STARTUP failures reported, please check workflows syntax! " +
                                    ', '.join(f"[{x.name}]({x.url})" for x in startup_failures[:5]))
             # END of HACK
 
