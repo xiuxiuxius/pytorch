@@ -446,6 +446,9 @@ class WrapperCodeGen(CodeGen):
             args.append(f"out={codegen_reference}")
         self.writeline(f"{kernel}({', '.join(args)})")
 
+    def generate_mkl_packed_linear_code(self, name, kernel, cpp_kernel, codegen_args):
+        return f"{name} = {kernel}({', '.join(codegen_args)})"
+
     @dynamo_utils.dynamo_timed
     def generate(self):
         result = IndentedBuffer()
@@ -748,3 +751,6 @@ class CppWrapperCodeGen(WrapperCodeGen):
         else:
             args.insert(0, f"{codegen_reference}")
         self.writeline(f"{cpp_kernel}({', '.join(args)});")
+
+    def generate_mkl_packed_linear_code(self, name, kernel, cpp_kernel, codegen_args):
+        return f"auto {name} = {cpp_kernel}({', '.join(codegen_args)});"
