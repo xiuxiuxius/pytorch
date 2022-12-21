@@ -508,10 +508,11 @@ class VariableBuilder:
                 value, guards=make_guards(GuardBuilder.FUNCTION_MATCH)
             )
         else:
-            result = UserDefinedObjectVariable(
-                value,
-                guards=self.make_guards(GuardBuilder.TYPE_MATCH),
-            )
+            if "__bool__" in value.__class__.__dict__:
+                guards = self.make_guards(GuardBuilder.ID_MATCH)
+            else:
+                guards = self.make_guards(GuardBuilder.TYPE_MATCH)
+            result = UserDefinedObjectVariable(value, guards=guards)
             if not SideEffects.cls_supports_mutation_side_effects(type(value)):
                 # don't allow STORE_ATTR mutation with custom __setattr__
                 return result
