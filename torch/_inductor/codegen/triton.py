@@ -844,7 +844,7 @@ class TritonKernel(Kernel):
         # https://github.com/pytorch/pytorch/pull/91316#issuecomment-1364680622
         ep = (
             ", eviction_policy='evict_last'"
-            if name not in self.current_node.last_usage
+            if name not in getattr(self.current_node, "last_usage", ())
             else ""
         )
 
