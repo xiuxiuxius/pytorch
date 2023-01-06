@@ -105,7 +105,7 @@ class DeviceMesh(object):
     ) -> None:
         self.device_type = device_type
         self.mesh = (
-            mesh.detach()
+            mesh
             if isinstance(mesh, torch.Tensor)
             else torch.tensor(mesh, dtype=torch.int)
         )
@@ -122,7 +122,11 @@ class DeviceMesh(object):
                 warnings.warn(
                     "We recommend using nccl backend for cuda device type, gloo backend might only have partial support!"
                 )
-            assert self._backend == "gloo" or self._backend == "nccl" or self._backend == "local"
+            assert (
+                self._backend == "gloo"
+                or self._backend == "nccl"
+                or self._backend == "local"
+            )
         else:
             raise RuntimeError(
                 f"DeviceMesh only support cpu or cuda device type, but got {device_type}"
@@ -227,6 +231,9 @@ class DeviceMesh(object):
 
     def __repr__(self) -> str:
         return f"DeviceMesh:({self.mesh.tolist()})"
+
+    def __hash__(self):
+        return hash(self.mesh)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DeviceMesh):
