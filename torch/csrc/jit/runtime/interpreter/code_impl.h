@@ -82,6 +82,7 @@ struct CodeImpl {
       operator_table_inv_;
   std::vector<Function*> function_table_;
   std::vector<std::unique_ptr<GraphFunction>> forked_functions_;
+  std::vector<std::unique_ptr<GraphFunction>> awaited_functions_;
   std::vector<TypePtr> type_table_;
   std::vector<std::function<void(std::vector<IValue>&)>>
       profile_function_table_;
@@ -340,6 +341,11 @@ struct CodeImpl {
   void emitWait(Node* node) {
     emitLoadInputs(node->inputs());
     insertInstruction(WAIT);
+  }
+
+  void emitAwaitableWait(Node* node) {
+    emitLoadInputs(node->inputs());
+    insertInstruction(AWAITABLE_WAIT);
   }
 
   void emitDrop(at::ArrayRef<Value*> to_drop) {
@@ -611,6 +617,16 @@ struct CodeImpl {
     insertInstruction(FORK, function_table_.size() - 1, node->inputs().size());
   }
 
+  void emitAwaitable(Node* node) {
+    emitLoadInputs(node->inputs());
+    std::unique_ptr<GraphFunction> await_fn(new GraphFunction(
+        "<awaitable function>", node->g(attr::Subgraph), nullptr));
+    awaited_functions_.emplace_back(std::move(await_fn));
+    function_table_.emplace_back(awaited_functions_.back().get());
+    insertInstruction(
+        AWAITABLE, function_table_.size() - 1, node->inputs().size());
+  }
+
   void emitWarn(Node* node) {
     if (FLAGS_torch_jit_disable_warning_prints) {
       return;
@@ -661,6 +677,9 @@ struct CodeImpl {
         break;
       case aten::wait:
         emitWait(node);
+        break;
+      case aten::awaitable_wait:
+        emitAwaitableWait(node);
         break;
       case prim::Param:
         break;
@@ -715,6 +734,9 @@ struct CodeImpl {
         break;
       case prim::fork:
         emitFork(node);
+        break;
+      case prim::awaitable:
+        emitAwaitable(node);
         break;
       case aten::warn:
         emitWarn(node);
