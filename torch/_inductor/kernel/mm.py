@@ -103,7 +103,9 @@ def tuned_addmm(inp, mat1, mat2, *, alpha=1, beta=1, layout=None):
 
     # TODO this is not quite fair benchmarking because we won't use fused cublasLt addmm
     # options to tune from
-    choices = [aten_addmm.bind((inp_expanded, mat1, mat2), layout, alpha=alpha, beta=beta)]
+    choices = [
+        aten_addmm.bind((inp_expanded, mat1, mat2), layout, alpha=alpha, beta=beta)
+    ]
     if use_triton_template(layout):
         for config in mm_configs():
             choices.append(
