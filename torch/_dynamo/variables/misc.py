@@ -556,17 +556,20 @@ class LambdaVariable(VariableTracker):
 
 
 class GetAttrVariable(VariableTracker):
-    def __init__(self, obj, name, **kwargs):
+    def __init__(self, obj, name, proxy=None, **kwargs):
         super(GetAttrVariable, self).__init__(**kwargs)
         assert isinstance(obj, VariableTracker)
         assert isinstance(name, str)
         self.obj = obj
         self.name = name
+        self.proxy = proxy
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.obj}, {self.name})"
 
     def as_proxy(self):
+        if self.proxy is not None:
+            return self.proxy
         return getattr(self.obj.as_proxy(), self.name)
 
     def const_getattr(self, tx, name):
