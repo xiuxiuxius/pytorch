@@ -507,7 +507,7 @@ class TestExpandedWeightModule(TestCase):
         self.assertEqual(actual_res, expected_res)
         self.assertEqual(actual_grads, expected_grads)
 
-    @modules(filter(lambda m_info: m_info.module_cls in (torch.nn.RNN, torch.nn.LSTM), module_db))
+    @modules(filter(lambda m_info: m_info.module_cls in (torch.nn.RNN, torch.nn.LSTM, torch.nn.GRU), module_db))
     def test_module(self, device, dtype, module_info, training):
         class RNNWrapper(torch.nn.Module):
             def __init__(self, m_cons, args, kwargs):
