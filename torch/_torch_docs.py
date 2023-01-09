@@ -10655,7 +10655,7 @@ Args:
     dim (int or tuple of ints, optional): if given, the input will be squeezed
            only in the specified dimensions.
 
-        .. versionchanged:: 1.14
+        .. versionchanged:: 2.0
            :attr:`dim` now accepts tuples of dimensions.
 
 Example::
@@ -10707,7 +10707,7 @@ Args:
 Keyword args:
     correction (int): difference between the sample size and sample degrees of freedom.
                       Defaults to `Bessel's correction`_, ``correction=1``.
-    .. versionchanged:: 1.14
+    .. versionchanged:: 2.0
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
 
@@ -10763,7 +10763,7 @@ Args:
 Keyword args:
     correction (int): difference between the sample size and sample degrees of freedom.
                       Defaults to `Bessel's correction`_, ``correction=1``.
-    .. versionchanged:: 1.14
+    .. versionchanged:: 2.0
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
     {keepdim}
@@ -12181,7 +12181,7 @@ Args:
 Keyword args:
     correction (int): difference between the sample size and sample degrees of freedom.
                       Defaults to `Bessel's correction`_, ``correction=1``.
-    .. versionchanged:: 1.14
+    .. versionchanged:: 2.0
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
     {keepdim}
@@ -12235,7 +12235,7 @@ Args:
 Keyword args:
     correction (int): difference between the sample size and sample degrees of freedom.
                       Defaults to `Bessel's correction`_, ``correction=1``.
-    .. versionchanged:: 1.14
+    .. versionchanged:: 2.0
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
     {keepdim}
