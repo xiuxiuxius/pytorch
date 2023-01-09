@@ -80,13 +80,14 @@ class TestExpandedWeightHelperFunction(TestCase):
 
     def test_set_grad_sample_if_exists(self, device):
         def test_fn(a):
-            return True
+            return grad_sample
 
         orig_weight = torch.randn(4, device=device, requires_grad=True)
         expanded_weight = ExpandedWeight(orig_weight, 3, loss_reduction="sum")
+        grad_sample = torch.randn(3)
         set_grad_sample_if_exists(expanded_weight, test_fn)
         self.assertTrue(hasattr(orig_weight, 'grad_sample'))
-        self.assertTrue(orig_weight.grad_sample)
+        self.assertEqual(orig_weight.grad_sample, grad_sample)
 
         basic_tensor = torch.randn(4, device=device)
         set_grad_sample_if_exists(basic_tensor, test_fn)
@@ -474,6 +475,38 @@ class TestExpandedWeightModule(TestCase):
         expected_grads = tuple(expected_grad for expected_grad in expected_grads if expected_grad is not None)
         assert [self.assertEqual(actual, 2 * expected) for (actual, expected) in zip(actual_grads, expected_grads)]
 
+    # getting the expected per sample grads for packed sequences is non-trivial. This just smoke checks that the
+    # outputs are the same and the sum of the per sample gradients is the same as the batched gradient
+    def _do_test_rnn_packed_sequence(self, module, input, args=None, kwargs=None):
+        args = args if args is not None else ()
+        kwargs = kwargs if kwargs is not None else {}
+
+        batch_size = max(tuple(input.batch_sizes)).item()
+
+        with freeze_rng_state():
+            # get per sample grads with ExpandedWeights context manager
+            actual_res = call_for_per_sample_grads(module,
+                                                   batch_size=batch_size,
+                                                   loss_reduction="sum")(input, *args, **kwargs).data.sum()
+            actual_res.backward(retain_graph=True)
+            actual_grads = []
+            for param in module.parameters():
+                self.assertEqual(param.grad_sample.shape[0], batch_size)
+                actual_grads.append(param.grad_sample.sum(0))
+                del param.grad_sample
+
+            module.zero_grad()
+            # get per sample grads with a for loop
+            expected_res = module(input, *args, **kwargs).data.sum()
+            expected_res.backward()
+            expected_grads = []
+            for param in module.parameters():
+                expected_grads.append(param.grad)
+
+
+        self.assertEqual(actual_res, expected_res)
+        self.assertEqual(actual_grads, expected_grads)
+
     @modules(filter(lambda m_info: m_info.module_cls in (torch.nn.RNN, torch.nn.LSTM), module_db))
     def test_module(self, device, dtype, module_info, training):
         class RNNWrapper(torch.nn.Module):
@@ -506,8 +539,9 @@ class TestExpandedWeightModule(TestCase):
             args, kwargs = module_input.forward_input.args, module_input.forward_input.kwargs
 
             # if the RNN tests use unbatched inputs--batch the inputs
-            input = args[0].detach()
-            if input.dim() == 2:
+            input = args[0]
+            if isinstance(input, torch.Tensor) and input.dim() == 2:
+                input = input.detach()
                 new_input_shape = [1] * (len(input.shape) + 1)
                 if batch_first:
                     new_input_shape[0] = 2
@@ -522,7 +556,10 @@ class TestExpandedWeightModule(TestCase):
                     args = list(args)
                     args[1] = h
 
-            self._do_test(m, input, args[1:], kwargs, batch_first=batch_first)
+            if isinstance(input, torch.nn.utils.rnn.PackedSequence):
+                self._do_test_rnn_packed_sequence(m, input, args[1:], kwargs)
+            else:
+                self._do_test(m, input, args[1:], kwargs, batch_first=batch_first)
 
     def test_per_sample_api_failing(self):
         module = nn.Linear(10, 10)
